@@ -19,6 +19,26 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
+const verifyFBToken = async (req, res, next) =>{
+    const token = req.headers.authorization;
+
+    if(!token){
+        return res.status(401).send({message: 'Unauthorized Access'})
+    
+    }
+
+    try {
+       const idToken = token.split(' ')[1] 
+       const decoded = await admin.auth().verifyIdToken(idToken)
+       console.log("decoded", decoded)
+       req.decoded_email = decoded.email
+       next()
+    } 
+    catch (error) {
+        return res.status(401).send({message: 'Unauthorized Access'})  
+    }
+}
+
 
 const uri = "mongodb+srv://donateblood:EjshDOGN5g2pbYmd@cluster0.p0naaxz.mongodb.net/?appName=Cluster0";
 
@@ -55,7 +75,7 @@ async function run() {
       res.send(result)
     })
 
-    app.post('/requests', async (req, res) =>{
+    app.post('/requests', verifyFBToken, async (req, res) =>{
       const data = req.body
       data.createdAt = new Date()
       const result = await requestsCollection.insertOne(data) 
