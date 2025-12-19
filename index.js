@@ -26,6 +26,19 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    const database = client.db('donateblood')
+    const userCollections = database.collection('user')
+    const requestsCollection = database.collection('requests') 
+
+    app.post('/users', async (req, res) =>{
+        const userInfo = req.body
+        userInfo.createdAt = new Date()
+        userInfo.role = 'donor'
+        userInfo.status = 'active'
+        const result = await userCollections.insertOne(userInfo)
+        res.send(result)
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
