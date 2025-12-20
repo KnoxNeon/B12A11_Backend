@@ -106,6 +106,21 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/my-request', verifyFBToken, async(req, res) =>{
+        const email = req.decoded_email
+        const size = Number(req.query.size)
+        const page = Number(req.query.page)
+        const query = {requester_email:email}
+        const result = await requestsCollection
+        .find(query)
+        .limit(size)
+        .skip(size*page)
+        .toArray()
+
+        const totalRequest = await requestsCollection.countDocuments(query)
+        res.send({request: result, totalRequest})
+    })
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
