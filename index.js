@@ -30,7 +30,6 @@ const verifyFBToken = async (req, res, next) =>{
     try {
        const idToken = token.split(' ')[1] 
        const decoded = await admin.auth().verifyIdToken(idToken)
-       console.log("decoded", decoded)
        req.decoded_email = decoded.email
        next()
     } 
@@ -78,6 +77,26 @@ async function run() {
       const query = {email:email}
       const result = await userCollections.findOne(query)
       res.send(result)
+    })
+
+    app.get('/users/:email', async(req, res) =>{
+        const email = req.params.email
+        const query = {email:email}
+        const result = await userCollections.findOne(query)
+        res.send(result)
+    })
+
+    app.patch('/update/user/status', verifyFBToken, async (req, res)=>{
+        const {email, status} = req.query
+        const query = {email:email}
+
+        const updateStatus = {
+            $set: {
+                status: status
+            }
+        }
+        const result = await userCollections.updateOne(query, updateStatus)
+        res.send(result)
     })
 
     app.post('/requests', verifyFBToken, async (req, res) =>{
