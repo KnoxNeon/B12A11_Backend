@@ -60,6 +60,7 @@ async function run() {
     const database = client.db('donateblood')
     const userCollections = database.collection('user')
     const requestsCollection = database.collection('requests') 
+    const paymentsCollection = database.collection('payments') 
 
     app.post('/users', async (req, res) =>{
         const userInfo = req.body
@@ -152,6 +153,36 @@ async function run() {
         })
 
         res.send({url: session.url})
+    })
+
+    app.post('/success-payment',async (req, res)=>{
+      const {session_id} = req.query
+      const session = await stripe.checkout.sessions.retrieve(
+        session_id
+        
+      )
+      console.log(session)
+
+      const transactionId = session.payment_intent;
+      const isPaymentExists = await paymentsCollection.findOne({transactionId})
+
+      if(isPaymentExists){
+        return
+      }
+
+      if(session.payment_status == 'paid'){
+        const paymentInfo = {
+          amount: session.amount_total/100,
+          currency: session.currency,
+          donorEmail: session.customer_email,
+          transactionId,
+          payment_status: session.payment_status,
+          paidAt: new Date()
+        }
+
+        const result = await paymentsCollection.insertOne(paymentInfo)
+        return res.send(result)
+      }
     })
 
     // Send a ping to confirm a successful connection
