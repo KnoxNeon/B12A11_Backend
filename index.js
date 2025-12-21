@@ -122,6 +122,30 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/all-requests', verifyFBToken, async (req, res) => {
+      const email = req.decoded_email;
+
+ 
+    const currentUser = await userCollections.findOne({ email: email });
+    const size = Number(req.query.size) || 10;
+    const page = Number(req.query.page) || 0;
+
+    try {
+     const allRequests = await requestsCollection
+        .find({})
+        .sort({ createdAt: -1 })
+        .skip(page * size)
+        .limit(size)
+        .toArray();
+      const totalRequests = await requestsCollection.countDocuments({});
+      res.send({requests: allRequests, totalRequests: totalRequests});
+      } 
+    catch (err) {
+      console.error(err);
+      res.status(500).send({ message: 'Server error' });
+     }
+   });
+
     app.get('/my-request', verifyFBToken, async(req, res) =>{
         const email = req.decoded_email
         const size = Number(req.query.size)
