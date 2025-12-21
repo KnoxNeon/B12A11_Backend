@@ -193,6 +193,29 @@ async function run() {
       console.log(query)
     })
 
+    app.get('/admin-stats', verifyFBToken, async (req, res) => {
+      const user = await userCollections.findOne({ email: req.decoded_email });
+
+    if (user?.role !== 'admin') {
+       return res.status(403).send({ message: 'Forbidden' });
+    }
+
+    const totalUsers = await userCollections.countDocuments({ role: 'donor' });
+    const totalRequests = await requestsCollection.countDocuments({});
+  
+    const fundingResult = await paymentsCollection.aggregate([
+      { $match: { payment_status: 'paid' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]).toArray();
+
+    const totalFunding = fundingResult[0]?.total || 0;
+      res.send({
+      totalUsers,
+      totalFunding,
+      totalRequests,
+    });
+  });
+
     app.post('/create-payment-checkout', async (req,res)=>{
         const information = req.body
         const amount = parseInt(information.donateAmount)*100
