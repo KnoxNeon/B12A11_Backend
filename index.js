@@ -137,6 +137,37 @@ async function run() {
         res.send({request: result, totalRequest})
     })
 
+    app.get('/my-recent-requests', verifyFBToken, async (req, res) => {
+        const email = req.decoded_email;
+
+        const recentRequests = await requestsCollection
+        .find({ requester_email: email })
+        .sort({ createdAt: -1 }) // Sort by newest first
+        .limit(3)
+        .toArray();
+
+         res.send(recentRequests);
+    });
+
+    app.patch('/requests/:id/status', verifyFBToken, async (req, res) => {
+        const { id } = req.params;
+        const { status } = req.body;
+        const result = await requestsCollection.updateOne(
+          { _id: new ObjectId(id), requester_email: req.decoded_email },
+          { $set: { status } }
+        );
+         res.send(result);
+    });
+
+    app.delete('/requests/:id', verifyFBToken, async (req, res) => {
+        const { id } = req.params;
+        const result = await requestsCollection.deleteOne({
+         _id: new ObjectId(id),
+         requester_email: req.decoded_email
+         });
+         res.send(result);
+    });
+
     app.get('/search-requests', async (req,res) =>{
       const {bloodGroup, district, upazila} = req.query
 
